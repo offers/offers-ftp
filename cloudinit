@@ -45,8 +45,8 @@ coreos:
         Description=Offers FTP
         After=docker.service
         Requires=docker.service
-        After=media-ftp.service
-        Requires=media-ftp.service
+        After=media-ftp.mount
+        Requires=media-ftp.mount
 
         [Service]
         TimeoutStartSec=600
