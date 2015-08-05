@@ -1,0 +1,64 @@
+#cloud-config
+coreos:
+  update:
+    reboot-strategy: off
+  units:
+    - name: dd-agent.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=DataDog Monitoring Service
+
+        [Service]
+        TimeoutStartSec=600
+        ExecStartPre=-/usr/bin/docker kill %n
+        ExecStartPre=-/usr/bin/docker rm %n
+        ExecStartPre=/usr/bin/docker pull datadog/docker-dd-agent
+        ExecStart=/usr/bin/bash -c \
+        "/usr/bin/docker run --privileged --name %n -h `hostname` \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v /proc/mounts:/host/proc/mounts:ro \
+        -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro \
+        -p 8125:8125/udp \
+        -e API_KEY=96a8b00d3348783f56914670a2f0260e \
+        datadog/docker-dd-agent"
+        ExecStop=/usr/bin/docker stop -t 30 %n
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: media-ftp.mount
+      command: start
+      content: |
+        [Mount]
+        What=/dev/xvdf1
+        Where=/media/ftp
+        Type=ext4
+
+    - name: offers-ftp.service
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Offers FTP
+        After=docker.service
+        Requires=docker.service
+        After=media-ftp.service
+        Requires=media-ftp.service
+
+        [Service]
+        TimeoutStartSec=600
+        ExecStartPre=-/usr/bin/docker kill %n
+        ExecStartPre=-/usr/bin/docker rm %n 
+        ExecStartPre=/usr/bin/docker pull registry.offers.net/devops/offers-ftp:r01
+
+        ExecStart=/usr/bin/bash -c \
+        "/usr/bin/docker run --rm --name %n --net=host -v /media/ftp:/home/ftpusers registry.offers.net/devops/offers-ftp:r01"
+        ExecStop=/usr/bin/docker stop -t 30 %n
+        ExecStop=/usr/bin/docker rm %n
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
