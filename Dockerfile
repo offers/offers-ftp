@@ -1,12 +1,8 @@
-FROM phusion/baseimage:0.9.17
+FROM registry.ofr.cloud/devops/baseimage:1.1.3
 
 ENV DEBIAN_FRONTEND noninteractive
 
-# Use baseimage-docker's init system.
-CMD ["/sbin/my_init"]
-
 RUN apt-get -y update
-
 RUN apt-get -y --force-yes install dpkg-dev debhelper
 
 # install dependancies
